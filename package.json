@@ -5,9 +5,9 @@
     "start": "./build.sh && node dist/app.js"
   },
   "dependencies": {
-    "koa": "2.0.0-alpha.7",
-    "koa-route": "^3.2.0",
-    "koa-bodyparser": "2.2.0"
+    "react": "*",
+    "redux": "*",
+    "react-redux": "*"
   },
   "devDependencies": {
     "babel-core": "6.16.0",

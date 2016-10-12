@@ -1,25 +1,52 @@
-import isotropy from "isotropy";
-import reactPlugin from "isotropy-react-plugin";
+import parse from "parseurl";
+import { renderToString } from 'react-dom/server'
+import { Provider } from 'react-redux'
 
-import Home from "./components/home";
-import Docs from "./components/docs";
-import Pricing from "./components/pricing";
-import About from "./components/about";
-import Signin from "./components/signin";
+import configureStore from './react/store/configure-store';
+import * as urlActions from "./react/actions/url";
 
-async init() {
-  const plugins = [reactPlugin];
+import MainContainer from "./containers/main";
 
-  const routes = [
-    { url: `/`, method: "GET", component: Home },
-    { url: `/docs`, method: "GET", component: Docs },
-    { url: `/pricing`, method: "GET", component: Pricing },
-    { url: `/about`, method: "GET", component: About },
-    { url: `/signin`, method: "GET", component: Signin },
-  ];
+/* Redux stores */
+const store = configureStore({ location: "/" });
 
-  const apps = [{ type: "react", routes, path: "/ui", renderToStaticMarkup: true }];
-  const options = { dir: __dirname, router };
-
-  await isotropy(apps, plugins, options);
+async function handleRequest(req, res) {
+  const evalResult = evalUrl(req);
+  const result = evalResult instanceof Promise ? (await evalResult) : evalResult;
+  await urlActions.load(result);
 }
+
+//Let's go!
+const server = http.createServer((req, res) => {
+  evalUrl(req).then(result => {
+
+  })
+
+
+    evalUrl();
+    const fn = findHandlerByUrl(req.url);
+    const args = getArgsFromUrl(req.url);
+    fn({ req, res }, )
+
+    const path = parse(req.url).path;
+    urlActions.load(path)(store.dispatch, store.getState)
+      .then(() => {
+        const content = renderToString(
+          <Provider store={store}>
+            <MainContainer />
+          </Provider>
+        );
+        res.end(content);
+      })
+  } catch (ex) {
+    if (ex instanceof NotFoundError) {
+      res.statusCode = 404;
+      res.end("Not found.");
+    } else {
+      res.statusCode = 500;
+      res.end("Something went wrong.");
+    }
+  }
+});
+
+server.listen(process.argv[0] || 8080);
