@@ -11,15 +11,15 @@ class MainContainer extends Component {
 
 const mapStateToProps = (state) => {
   return {
-    url: state.location.url
+    component: state.component
   }
 }
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    closeContextMenu: () => {
-      dispatch(actions.closeContextMenu())
-    }
+    // closeContextMenu: () => {
+    //   dispatch(actions.closeContextMenu())
+    // }
   }
 }
 
