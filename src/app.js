@@ -1,8 +1,8 @@
-import HomeContainer from "../containers/home";
-import DocsContainer from "../containers/docs";
-import PricingContainer from "../containers/pricing";
-import AboutContainer from "../containers/about";
-import SigninContainer from "../containers/signin";
+import HomeContainer from "./containers/home";
+import DocsContainer from "./containers/docs";
+import PricingContainer from "./containers/pricing";
+import AboutContainer from "./containers/about";
+import SigninContainer from "./containers/signin";
 
 export default {
   get index() {

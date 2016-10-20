@@ -1,8 +1,12 @@
-import { createApp, evalRequest } from "nodejam-server";
+import 'source-map-support/register'
+
 import path from "path";
 import http from "http";
 import React from "react";
 
+import { evalRequest } from "./nodejam-server";
+
+import app from "./app";
 import MainContainer from "./containers/main";
 import containerActions from "./actions/container";
 
@@ -39,13 +43,13 @@ async function handleRequest(req, res) {
       res.end(result)
     }
   } catch (ex) {
+    console.log(ex);
     res.statusCode = 500;
     res.end("Something went wrong.");
   }
 }
 
 async function init() {
-  const app = createApp(path.join(__dirname, "app.js"));
   const server = http.createServer(handleRequest);
   server.listen(8080);
 }

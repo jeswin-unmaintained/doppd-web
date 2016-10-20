@@ -5,20 +5,26 @@
     "start": "./build.sh && node dist/app.js"
   },
   "dependencies": {
+    "acorn": "^4.0.3",
+    "ast-types": "^0.9.0",
+    "babel-plugin-transform-react-jsx": "^6.8.0",
+    "formidable": "^1.0.17",
+    "nodefunc-promisify": "^2.0.0",
     "react": "*",
+    "react-redux": "*",
     "redux": "*",
-    "react-redux": "*"
+    "source-map-support": "^0.4.5"
   },
   "devDependencies": {
     "babel-core": "6.16.0",
-    "json-loader": "*",
-    "babel-preset-node6": "*",
-    "babel-preset-stage-3": "*",
     "babel-plugin-transform-async-to-generator": "*",
     "babel-plugin-transform-class-properties": "*",
-    "source-map-loader": "*",
+    "babel-preset-node6": "*",
+    "babel-preset-stage-3": "*",
+    "json-loader": "*",
     "mocha": "*",
     "should": "*",
+    "source-map-loader": "*",
     "webpack": "latest"
   }
 }

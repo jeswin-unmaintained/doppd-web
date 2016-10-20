@@ -1,10 +1,10 @@
+import TopBar from "../main/top-bar";
+
 class HelloMessage extends React.Component {
   render() {
     return(
-      <TopBar />
-      <
       <div>
-
+        <TopBar />
       </div>
     );
   }
