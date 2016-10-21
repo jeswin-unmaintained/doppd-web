@@ -2,25 +2,38 @@ import url from "url";
 import formidable from "formidable";
 import promisify from "nodefunc-promisify";
 import * as acorn from "acorn";
-import astTypes from "ast-types";
 
-const n = astTypes.namedTypes;
 const formParse = promisify((req, form) => form.parse(req));
 
 export async function evalRequest(req, app) {
   const parsed = url.parse(req.url);
-  console.log(parsed);
   const ast = acorn.parse(parsed.pathname.slice(1));
-  console.log(JSON.stringify(ast, null, 2));
-  parseAST(ast);
+  const parseResult = parseAST(ast);
 
   if (["POST", "PUT"].includes(req.method.toUpperCase())) {
     var form = new formidable.IncomingForm();
     const [fields, files] = await formParse(req, form);
+  } else if (req.method.toUpperCase() === "GET") {
+    const args = parseResult.args.map(a =>
+      a.type === "Literal" ? a.value :
+      a.type === "Identifier" ? getUrlParam(a.name) :
+      undefined
+    );
 
-  } else if (req.method.toUpperCase()) {
+    const thisPtr = undefined;
+    const fn = parseResult.memberExpressions.reverse().reduce((current, prop) => {
+      thisPtr = current;
+      return current[prop.name];
+    }, app);
 
+    const result = fn.apply(thisPtr, args)
+
+    return result instanceof Promise ? (await result) : result;
   };
+}
+
+function getUrlParam(name) {
+
 }
 
 /*
@@ -100,29 +113,25 @@ export async function evalRequest(req, app) {
 */
 
 function parseAST(ast) {
-  astTypes.visit(ast, {
-    visitExpressionStatement: function(path) {
-      this.traverse(path);
-    },
+  const expressionStatement = ast.body[0];
+  if (expressionStatement.type !== "ExpressionStatement") {
+    throw new Error(`Expected ExpressionStatement but received ${expressionStatement.type}.`);
+  }
 
-    // This method will be called for any node with .type "MemberExpression":
-    visitMemberExpression: function(path) {
-      // Visitor methods receive a single argument, a NodePath object
-      // wrapping the node of interest.
-      var node = path.node;
+  const callExpression = expressionStatement.expression;
+  if (callExpression.type !== "CallExpression") {
+    throw new Error(`Expected CallExpression but received ${callExpression.type}.`);
+  }
 
-      if (n.Identifier.check(node.object) &&
-          node.object.name === "arguments" &&
-          n.Identifier.check(node.property)) {
-          assert.notStrictEqual(node.property.name, "callee");
-      }
+  const memberExpressions = [];
+  let memberExpression = callExpression.callee;
+  while (memberExpression) {
+    memberExpressions.push(memberExpression);
+    memberExpression = memberExpression.object;
+  }
 
-      // It's your responsibility to call this.traverse with some
-      // NodePath object (usually the one passed into the visitor
-      // method) before the visitor method returns, or return false to
-      // indicate that the traversal need not continue any further down
-      // this subtree.
-      this.traverse(path);
-    }
-  });
+  const args = callExpression.arguments;
+
+  console.log({ callExpression, memberExpressions, args });
+  return { callExpression, memberExpressions, args };
 }

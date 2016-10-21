@@ -1,2 +1,2 @@
-pkill -f node\ dist/app.js\ nodejam-ide-process
-node dist/app.js nodejam-ide-process &
+pkill -f node\ dist/index.js\ doppd-web-process
+node dist/index.js doppd-web-process &
