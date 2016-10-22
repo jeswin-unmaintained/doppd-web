@@ -22,5 +22,13 @@ export default {
   },
   get signin() {
     return SigninContainer;
+  },
+  hello: {
+    world: {
+      someFn: (x, y, z) => {
+        console.log("got yoyo!");
+        return JSON.stringify({ x, y, z });
+      }
+    }
   }
 }

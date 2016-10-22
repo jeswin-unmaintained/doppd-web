@@ -5,37 +5,6 @@ import * as acorn from "acorn";
 
 const formParse = promisify((req, form) => form.parse(req));
 
-export async function evalRequest(req, app) {
-  const parsed = url.parse(req.url);
-  const ast = acorn.parse(parsed.pathname.slice(1));
-  const parseResult = parseAST(ast);
-
-  if (["POST", "PUT"].includes(req.method.toUpperCase())) {
-    var form = new formidable.IncomingForm();
-    const [fields, files] = await formParse(req, form);
-  } else if (req.method.toUpperCase() === "GET") {
-    const args = parseResult.args.map(a =>
-      a.type === "Literal" ? a.value :
-      a.type === "Identifier" ? getUrlParam(a.name) :
-      undefined
-    );
-
-    const thisPtr = undefined;
-    const fn = parseResult.memberExpressions.reverse().reduce((current, prop) => {
-      thisPtr = current;
-      return current[prop.name];
-    }, app);
-
-    const result = fn.apply(thisPtr, args)
-
-    return result instanceof Promise ? (await result) : result;
-  };
-}
-
-function getUrlParam(name) {
-
-}
-
 /*
   Parse the general form hello.world.someFn(x, y, 20)
 
@@ -111,27 +80,74 @@ function getUrlParam(name) {
   }
 
 */
+export async function evalRequest(req, app) {
+  const parsed = url.parse(req.url);
+  const ast = acorn.parse(parsed.pathname.slice(1));
 
-function parseAST(ast) {
   const expressionStatement = ast.body[0];
   if (expressionStatement.type !== "ExpressionStatement") {
-    throw new Error(`Expected ExpressionStatement but received ${expressionStatement.type}.`);
+    throw new Error(`Expected ExpressionStatement but got ${expressionStatement.type}.`);
   }
 
   const callExpression = expressionStatement.expression;
   if (callExpression.type !== "CallExpression") {
-    throw new Error(`Expected CallExpression but received ${callExpression.type}.`);
+    throw new Error(`Expected CallExpression but got ${callExpression.type}.`);
   }
 
-  const memberExpressions = [];
-  let memberExpression = callExpression.callee;
-  while (memberExpression) {
-    memberExpressions.push(memberExpression);
-    memberExpression = memberExpression.object;
+  const args = callExpression.arguments.map(a =>
+    a.type === "Literal" ? a.value :
+    a.type === "Identifier" ? getUrlParam(a.name) :
+    undefined
+  );
+
+  const argDict = {};
+  for (let arg of callExpression.arguments) {
+    if (arg.type === "Identifier") {
+      argDict[arg.name] = getUrlParams()
+    }
   }
 
-  const args = callExpression.arguments;
+  if (["POST", "PUT"].includes(req.method.toUpperCase())) {
+    var form = new formidable.IncomingForm();
+    const [fields, files] = await formParse(req, form);
+    for (let f in fields) {
+      argDict[f] = fields[f];
+    }
+    for (let f in files) {
+      argDict[f] = files[f];
+    }
+  } else if (req.method.toUpperCase() === "GET") {
+    for ()
 
-  console.log({ callExpression, memberExpressions, args });
-  return { callExpression, memberExpressions, args };
+  }
+
+  const memberExpression = callExpression.callee;
+  let functionPath = getFunctionPath(memberExpression);
+
+  let thisPtr = undefined;
+  let fnPtr = app;
+  for (let identifier of functionPath) {
+    thisPtr = fnPtr;
+    fnPtr = fnPtr[identifier];
+  }
+
+  const args = callExpression.arguments.map(a => argDict[a.name]);
+
+  const result = fnPtr.apply(thisPtr, args)
+  return result instanceof Promise ? (await result) : result;
+}
+
+function getFunctionPath(expr, acc = []) {
+  if (expr.type === "Identifier") {
+    acc.push(expr.name);
+  } else if (expr.type === "MemberExpression") {
+    getFunctionPath(expr.object, acc);
+    acc.push(expr.property.name);
+  }
+  return acc;
+}
+
+
+function getUrlParam(name) {
+
 }

@@ -9,8 +9,8 @@ Menu
 - About
 - Sign in
 
-A rethink of how to build Web Services and Apps.
---------
+Build full-fledged apps with simple JavaScript syntax.
+Forget protocols, calling conventions, databases and APIs.
 
 Deploy your first Service in 10 seconds.
 Copy and paste this into your browser.
