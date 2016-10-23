@@ -1,9 +1,10 @@
 import url from "url";
+import querystring from "querystring";
 import formidable from "formidable";
 import promisify from "nodefunc-promisify";
 import * as acorn from "acorn";
 
-const formParse = promisify((req, form) => form.parse(req));
+const formParse = promisify((req, form, cb) => form.parse(req, cb), { hasMultipleResults: true });
 
 /*
   Parse the general form hello.world.someFn(x, y, 20)
@@ -94,32 +95,10 @@ export async function evalRequest(req, app) {
     throw new Error(`Expected CallExpression but got ${callExpression.type}.`);
   }
 
-  const args = callExpression.arguments.map(a =>
-    a.type === "Literal" ? a.value :
-    a.type === "Identifier" ? getUrlParam(a.name) :
-    undefined
-  );
+  const queryParams = querystring.parse(parsed.query);
 
-  const argDict = {};
-  for (let arg of callExpression.arguments) {
-    if (arg.type === "Identifier") {
-      argDict[arg.name] = getUrlParams()
-    }
-  }
-
-  if (["POST", "PUT"].includes(req.method.toUpperCase())) {
-    var form = new formidable.IncomingForm();
-    const [fields, files] = await formParse(req, form);
-    for (let f in fields) {
-      argDict[f] = fields[f];
-    }
-    for (let f in files) {
-      argDict[f] = files[f];
-    }
-  } else if (req.method.toUpperCase() === "GET") {
-    for ()
-
-  }
+  const [fields, files] = ["POST", "PUT"].includes(req.method.toUpperCase()) ? (await formParse(req, new formidable.IncomingForm())) : [{}, {}];
+  const argsDict = { ...queryParams, ...fields, ...files };
 
   const memberExpression = callExpression.callee;
   let functionPath = getFunctionPath(memberExpression);
@@ -131,7 +110,16 @@ export async function evalRequest(req, app) {
     fnPtr = fnPtr[identifier];
   }
 
-  const args = callExpression.arguments.map(a => argDict[a.name]);
+  const args = callExpression.arguments.map(a => {
+    if (a.type === "Identifier") {
+      let arg = argsDict[a.name];
+      return typeof arg === "string" ? JSON.parse(arg) : arg;
+    } else if (a.type === "Literal") {
+      return a.value;
+    } else {
+      throw new Error(`Expected Identifier or Literal but got ${a.type}`);
+    }
+  });
 
   const result = fnPtr.apply(thisPtr, args)
   return result instanceof Promise ? (await result) : result;
@@ -145,9 +133,4 @@ function getFunctionPath(expr, acc = []) {
     acc.push(expr.property.name);
   }
   return acc;
-}
-
-
-function getUrlParam(name) {
-
 }
