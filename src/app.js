@@ -25,6 +25,7 @@ export default {
   },
   hello: {
     world: {
+      someProp: `hello world.`,
       someFn: (x, y, z) => {
         console.log("got yoyo!");
         return JSON.stringify({ x, y, z });

@@ -8,8 +8,9 @@ const formParse = promisify((req, form, cb) => form.parse(req, cb), { hasMultipl
 
 /*
   Parse the general form hello.world.someFn(x, y, 20)
+  or hello.world.someProp
 
-  Which is this AST:
+  hello.world.someFn(x, y, 20) is this AST:
   {
     "type": "Program",
     "start": 0,
@@ -78,8 +79,43 @@ const formParse = promisify((req, form, cb) => form.parse(req, cb), { hasMultipl
       }
     ],
     "sourceType": "module"
-  }
 
+  hello.world.someFn(x, y, 20) is this AST:
+  {
+    "type": "ExpressionStatement",
+    "start": 0,
+    "end": 20,
+    "expression": {
+      "type": "MemberExpression",
+      "start": 0,
+      "end": 20,
+      "object": {
+        "type": "MemberExpression",
+        "start": 0,
+        "end": 11,
+        "object": {
+          "type": "Identifier",
+          "start": 0,
+          "end": 5,
+          "name": "hello"
+        },
+        "property": {
+          "type": "Identifier",
+          "start": 6,
+          "end": 11,
+          "name": "world"
+        },
+        "computed": false
+      },
+      "property": {
+        "type": "Identifier",
+        "start": 12,
+        "end": 20,
+        "name": "someProp"
+      },
+      "computed": false
+    }
+  }
 */
 export async function evalRequest(req, app) {
   const parsed = url.parse(req.url);
@@ -90,29 +126,33 @@ export async function evalRequest(req, app) {
     throw new Error(`Expected ExpressionStatement but got ${expressionStatement.type}.`);
   }
 
-  const callExpression = expressionStatement.expression;
-  if (callExpression.type !== "CallExpression") {
-    throw new Error(`Expected CallExpression but got ${callExpression.type}.`);
-  }
-
   const queryParams = querystring.parse(parsed.query);
-
   const [fields, files] = ["POST", "PUT"].includes(req.method.toUpperCase()) ? (await formParse(req, new formidable.IncomingForm())) : [{}, {}];
   const argsDict = { ...queryParams, ...fields, ...files };
 
-  const memberExpression = callExpression.callee;
-  let functionPath = getFunctionPath(memberExpression);
+  const fnToInvoke = expressionStatement.expression.type === "CallExpression" ? invokeCallExpression :
+    expressionStatement.expression.type === "MemberExpression" ? invokeMemberExpression : undefined;
 
-  let thisPtr = undefined;
-  let fnPtr = app;
-  for (let identifier of functionPath) {
-    thisPtr = fnPtr;
-    fnPtr = fnPtr[identifier];
+  if (!fnToInvoke) {
+    throw new Error(`Expected CallExpression or MemberExpression but got ${expressionStatement.expression.type}.`);
   }
+
+  const result = fnToInvoke(expressionStatement.expression, app, argsDict);
+  return result instanceof Promise ? (await result) : result;
+}
+
+/*
+  Invokes hello.world.someFn(...) with the correct arguments.
+  The thisPtr in someFn is set to world.
+*/
+function invokeCallExpression(callExpression, app, argsDict) {
+  const memberExpression = callExpression.callee;
+  const functionPath = getPathFromMemberExpression(memberExpression);
+  const [fnPtr, thisPtr] = functionPath.reduce(([_fn, _this], item) =>  [_fn[item], _fn], [app, undefined])
 
   const args = callExpression.arguments.map(a => {
     if (a.type === "Identifier") {
-      let arg = argsDict[a.name];
+      const arg = argsDict[a.name];
       return typeof arg === "string" ? JSON.parse(arg) : arg;
     } else if (a.type === "Literal") {
       return a.value;
@@ -121,15 +161,25 @@ export async function evalRequest(req, app) {
     }
   });
 
-  const result = fnPtr.apply(thisPtr, args)
-  return result instanceof Promise ? (await result) : result;
+  return fnPtr.apply(thisPtr, args)
 }
 
-function getFunctionPath(expr, acc = []) {
+/*
+  Gets the property or field hello.world.someProp.
+*/
+function invokeMemberExpression(memberExpression, app) {
+  let exprPath = getPathFromMemberExpression(memberExpression);
+  return exprPath.reduce((current, item) => current[item], app);
+}
+
+/*
+  Converts a nested memberExpression into ["hello", "world", "prop1"]
+*/
+function getPathFromMemberExpression(expr, acc = []) {
   if (expr.type === "Identifier") {
     acc.push(expr.name);
   } else if (expr.type === "MemberExpression") {
-    getFunctionPath(expr.object, acc);
+    getPathFromMemberExpression(expr.object, acc);
     acc.push(expr.property.name);
   }
   return acc;
