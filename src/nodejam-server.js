@@ -9,6 +9,7 @@ const formParse = promisify((req, form, cb) => form.parse(req, cb), { hasMultipl
 /*
   Parse the general form hello.world.someFn(x, y, 20)
   or hello.world.someProp
+  or justSomeProp
 
   hello.world.someFn(x, y, 20) is this AST:
   {
@@ -80,7 +81,7 @@ const formParse = promisify((req, form, cb) => form.parse(req, cb), { hasMultipl
     ],
     "sourceType": "module"
 
-  hello.world.someFn(x, y, 20) is this AST:
+  hello.world.someProp is this AST:
   {
     "type": "ExpressionStatement",
     "start": 0,
@@ -116,10 +117,24 @@ const formParse = promisify((req, form, cb) => form.parse(req, cb), { hasMultipl
       "computed": false
     }
   }
+
+  justSomeProp is this AST
+  {
+    "type": "ExpressionStatement",
+    "start": 0,
+    "end": 5,
+    "expression": {
+      "type": "Identifier",
+      "start": 0,
+      "end": 5,
+      "name": "justSomeProp"
+    }
+  }
 */
-export async function evalRequest(req, app) {
+export async function evalRequest(req, app, options) {
   const parsed = url.parse(req.url);
-  const ast = acorn.parse(parsed.pathname.slice(1));
+  const code = parsed.pathname.slice(1) || options.index;
+  const ast = acorn.parse(code);
 
   const expressionStatement = ast.body[0];
   if (expressionStatement.type !== "ExpressionStatement") {
@@ -131,18 +146,21 @@ export async function evalRequest(req, app) {
   const argsDict = { ...queryParams, ...fields, ...files };
 
   const fnToInvoke = expressionStatement.expression.type === "CallExpression" ? invokeCallExpression :
-    expressionStatement.expression.type === "MemberExpression" ? invokeMemberExpression : undefined;
+    expressionStatement.expression.type === "MemberExpression" ? invokeMemberExpression :
+    expressionStatement.expression.type === "Identifier" ? invokeIdentifer :
+    undefined;
 
   if (!fnToInvoke) {
-    throw new Error(`Expected CallExpression or MemberExpression but got ${expressionStatement.expression.type}.`);
+    throw new Error(`Expected CallExpression, MemberExpression or Identifier but got ${expressionStatement.expression.type}.`);
   }
 
   const result = fnToInvoke(expressionStatement.expression, app, argsDict);
   return result instanceof Promise ? (await result) : result;
 }
 
+
 /*
-  Invokes hello.world.someFn(...) with the correct arguments.
+  Invokes app.hello.world.someFn(...) with the correct arguments.
   The thisPtr in someFn is set to world.
 */
 function invokeCallExpression(callExpression, app, argsDict) {
@@ -157,30 +175,40 @@ function invokeCallExpression(callExpression, app, argsDict) {
     } else if (a.type === "Literal") {
       return a.value;
     } else {
-      throw new Error(`Expected Identifier or Literal but got ${a.type}`);
+      throw new Error(`Expected Identifier or Literal but got ${a.type}.`);
     }
   });
 
   return fnPtr.apply(thisPtr, args)
 }
 
+
 /*
-  Gets the property or field hello.world.someProp.
+  Gets the property or field app.hello.world.someProp.
 */
 function invokeMemberExpression(memberExpression, app) {
   let exprPath = getPathFromMemberExpression(memberExpression);
   return exprPath.reduce((current, item) => current[item], app);
 }
 
+
+/*
+  Gets app.someProp
+*/
+function invokeIdentifer(identifier, app) {
+  return app[identifier.name];
+}
+
+
 /*
   Converts a nested memberExpression into ["hello", "world", "prop1"]
 */
 function getPathFromMemberExpression(expr, acc = []) {
   if (expr.type === "Identifier") {
-    acc.push(expr.name);
+    return acc.concat(expr.name);
   } else if (expr.type === "MemberExpression") {
-    getPathFromMemberExpression(expr.object, acc);
-    acc.push(expr.property.name);
+    return acc.concat(getPathFromMemberExpression(expr.object, acc)).concat(expr.property.name);
+  } else {
+    throw new Error(`Expected MemberExpression or Identifier but get ${expr.type}.`);
   }
-  return acc;
 }

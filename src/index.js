@@ -25,7 +25,7 @@ const template = (html) => `
 
 async function handleRequest(req, res) {
   try {
-    const result = await evalRequest(req, app);
+    const result = await evalRequest(req, app, { index: "index" });
 
     if (result instanceof React.Component) {
       const store = configureStore({ component: undefined });

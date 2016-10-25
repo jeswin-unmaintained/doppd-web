@@ -23,6 +23,12 @@ export default {
   get signin() {
     return SigninContainer;
   },
+  get test() {
+    return "yoyo the one!"
+  },
+  ohMyGod() {
+    return "this makes no sense?"
+  },
   hello: {
     world: {
       someProp: `hello world.`,
