@@ -151,6 +151,7 @@ export async function evalRequest(req, app, options) {
     undefined;
 
   if (!fnToInvoke) {
+    console.log(JSON.stringify(ast, null, 2));
     throw new Error(`Expected CallExpression, MemberExpression or Identifier but got ${expressionStatement.expression.type}.`);
   }
 

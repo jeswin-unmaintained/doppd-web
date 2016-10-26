@@ -1,14 +1,17 @@
 import 'source-map-support/register'
-
 import path from "path";
 import http from "http";
 import React from "react";
-
+import { renderToString } from "react-dom/server";
+import { Provider } from 'react-redux';
 import { evalRequest } from "./nodejam-server";
 
 import app from "./app";
 import MainContainer from "./containers/main";
-import containerActions from "./actions/container";
+import configureStore from "./store/configure-store";
+import * as containerActions from "./actions/container";
+
+const store = configureStore({});
 
 const template = (html) => `
 <html>
@@ -27,8 +30,7 @@ async function handleRequest(req, res) {
   try {
     const result = await evalRequest(req, app, { index: "index" });
 
-    if (result instanceof React.Component) {
-      const store = configureStore({ component: undefined });
+    if (typeof(result) === "function") {
       containerActions.loadComponent(result);
       const content = renderToString(
         <Provider store={store}>

@@ -5,7 +5,8 @@ import Main from "../components/main";
 
 class MainContainer extends Component {
   render() {
-    return (<Main {...this.props} {...this} />)
+    return <div>ddd</div>
+    // (<Main {...this.props} {...this} />)
   }
 }
 
