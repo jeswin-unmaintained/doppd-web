@@ -1,10 +1,9 @@
-import 'source-map-support/register'
-import path from "path";
+import 'source-map-support/register';
 import http from "http";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { Provider } from 'react-redux';
-import { evalRequest } from "./nodejam-server";
+import evalExpression from "isotropy-server-eval";
 
 import app from "./app";
 import MainContainer from "./containers/main";
@@ -28,7 +27,7 @@ const template = (html) => `
 
 async function handleRequest(req, res) {
   try {
-    const result = await evalRequest(req, app, { index: "index" });
+    const result = await evalExpression(req, app, { default: "index" });
 
     if (typeof(result) === "function") {
       containerActions.loadComponent(result);
@@ -45,7 +44,6 @@ async function handleRequest(req, res) {
       res.end(result)
     }
   } catch (ex) {
-    console.log(ex);
     res.statusCode = 500;
     res.end("Something went wrong.");
   }
