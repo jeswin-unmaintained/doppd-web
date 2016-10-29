@@ -44,6 +44,7 @@ async function handleRequest(req, res) {
       res.end(result)
     }
   } catch (ex) {
+    console.log(ex);
     res.statusCode = 500;
     res.end("Something went wrong.");
   }
