@@ -1,4 +1,4 @@
-export default class HelloMessage extends React.Component {
+export default class Home extends React.Component {
   render() {
     return(
       <div>

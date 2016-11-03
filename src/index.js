@@ -15,10 +15,14 @@ const store = configureStore({});
 const template = (html) => `
 <html>
   <head>
-    <script src="/static/bundle.js"></script>
-    <link rel="stylesheet" type="text/css" href="/static/css/base.css"></link>
-    <link rel="stylesheet" type="text/css" href="/static/css/fonts.css"></link>
-    <link rel="stylesheet" type="text/css" href="/vendor/font-awesome/css/font-awesome.min.css"></link>
+    <!--<script src="/static/bundle.js"></script>-->
+    <link href="https://fonts.googleapis.com/css?family=Fira+Mono|Open+Sans:300,400,700" rel="stylesheet">
+    <style>
+      body {
+        margin:0;
+        font-family: Open Sans
+      }      
+    </style>
   </head>
   <body>
     <div id="container">${html}</div>
@@ -27,7 +31,7 @@ const template = (html) => `
 
 async function handleRequest(req, res) {
   try {
-    const result = await evalExpression(req, app, { default: "index" });
+    const result = await evalExpression(req, app, { default: "ui.index" });
 
     if (typeof(result) === "function") {
       containerActions.loadComponent(result);
@@ -44,7 +48,7 @@ async function handleRequest(req, res) {
       res.end(result)
     }
   } catch (ex) {
-    console.log(ex);
+    console.log(req.url, ex);
     res.statusCode = 500;
     res.end("Something went wrong.");
   }
