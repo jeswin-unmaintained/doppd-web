@@ -44,7 +44,7 @@ export default class Code extends React.Component {
         </p>
         <p>
           <span style={style.comment}>
-            //compiles into a database query
+            //here's database query
           </span><br />
           <span style={style.namespace}>db.customers.</span><span style={style.function}>filter</span><span style={style.parameters}>(cust => cust.id &lt; 10)</span>
         </p>
@@ -56,11 +56,10 @@ export default class Code extends React.Component {
         </p>
         <p>
           <span style={style.comment}>
-            #Expose your own functions via<br />
+            #Expose your functions via<br />
             #a radically simpler RPC convention
           </span><br />
-          <span style={style.cmdline}>{`curl "http://example.com/sum(x,y)?x=10&y=20"`}</span><br />
-          <span style={style.cmdline}>{`curl "http://example.com/svc.kgsToPounds(200)"`}</span>
+          <span style={style.cmdline}>{`curl "http://example.com/sum(x,y)?x=10&y=20"`}</span>
         </p>
       </div>
     );

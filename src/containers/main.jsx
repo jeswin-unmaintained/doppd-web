@@ -10,9 +10,7 @@ class MainContainer extends Component {
 }
 
 const mapStateToProps = (state) => {
-  return {
-    component: state.component
-  }
+  return state.container;
 }
 
 const mapDispatchToProps = (dispatch) => {

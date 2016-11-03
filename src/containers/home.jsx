@@ -1,11 +1,11 @@
 /* @flow */
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import Main from "../components/main";
+import Home from "../components/home";
 
-class MainContainer extends Component {
+class HomeContainer extends Component {
   render() {
-    return (<Main {...this.props} {...this} />)
+    return (<Home {...this.props} {...this} />)
   }
 }
 
@@ -26,4 +26,4 @@ const mapDispatchToProps = (dispatch) => {
 export default connect(
   mapStateToProps,
   mapDispatchToProps,
-)(MainContainer);
+)(HomeContainer);

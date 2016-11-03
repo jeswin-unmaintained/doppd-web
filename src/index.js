@@ -21,7 +21,7 @@ const template = (html) => `
       body {
         margin:0;
         font-family: Open Sans
-      }      
+      }
     </style>
   </head>
   <body>
@@ -34,7 +34,7 @@ async function handleRequest(req, res) {
     const result = await evalExpression(req, app, { default: "ui.index" });
 
     if (typeof(result) === "function") {
-      containerActions.loadComponent(result);
+      store.dispatch(containerActions.loadComponent(result));
       const content = renderToString(
         <Provider store={store}>
           <MainContainer />

@@ -7,16 +7,16 @@ export default class Billboard extends React.Component {
     return {
       div: {
         backgroundImage: "url(https://images.unsplash.com/photo-1451914532720-521f23b7dedb?dpr=1.5&auto=format&fit=crop&w=1500&h=1125&q=80&cs=tinysrgb&crop=)",
-        height: "50em",
-        marginTop: "-10em",
-        paddingTop: "10em",
+        height: "40em",
+        marginTop: "-6em",
+        paddingTop: "6em",
         backgroundSize: "cover",
         alignItems: "center",
         display: "flex",
         flexDirection: "column",
       },
       h1: {
-        marginTop: "1em",
+        marginTop: "0.3em",
         fontSize: "4em",
         fontWeight: "lighter",
         marginBottom: "0em"

@@ -1,6 +1,6 @@
 function loadComponent(state, action) {
   const component = action.component;
-  return Object.assign({}, state, { component });
+  return { ...state, component };
 }
 
 export default function(state = {}, action) {
