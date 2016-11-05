@@ -16,8 +16,7 @@ export default class Logo extends React.Component {
         background: "white",
         padding: "0.3em 1em",
         borderRadius: "3px",
-        textTransform: "uppercase",
-        opacity: "0.6",
+        textTransform: "uppercase"
       },
       a: {
         textDecoration: "none"

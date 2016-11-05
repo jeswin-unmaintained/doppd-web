@@ -9,24 +9,41 @@ export default class Code extends React.Component {
         padding: "1em 2em",
         fontFamily: "Fira Mono",
         borderRadius: "8px",
-        opacity: "0.8",
         width: "640px",
         maxWidth: "100%"
       },
-      comment: {
-        color: "green"
-      },
-      namespace: {
-        color: "brown"
-      },
-      function: {
-        color: "blue"
-      },
-      parameters: {
+      brackets: {
         color: "gray"
       },
       cmdline: {
         color: "brown"
+      },
+      comma: {
+        color: "gray"
+      },
+      comment: {
+        color: "gray"
+      },
+      dot: {
+        color: "blue"
+      },
+      function: {
+        color: "blue"
+      },
+      namespace: {
+        color: "brown"
+      },
+      object: {
+        color: "brown"
+      },
+      operator: {
+        color: "blue"
+      },
+      parameters: {
+        color: "brown"
+      },
+      string: {
+        color: "green"
       }
     }
   }
@@ -38,21 +55,34 @@ export default class Code extends React.Component {
       <div style={style.div}>
         <p>
           <span style={style.comment}>
-            //compiles into a database insert
+            //a database insert
           </span><br />
-          <span style={style.namespace}>db.customers.</span><span style={style.function}>push</span><span style={style.parameters}>(cust1)</span>
+          <span style={style.namespace}>db<span style={style.dot}>.</span>customers<span style={style.dot}>.</span></span><span style={style.function}>push</span><span style={style.brackets}>(</span><span style={style.parameters}>cust1</span><span style={style.brackets}>)</span>
         </p>
         <p>
           <span style={style.comment}>
-            //here's database query
+            //here's a database query
           </span><br />
-          <span style={style.namespace}>db.customers.</span><span style={style.function}>filter</span><span style={style.parameters}>(cust => cust.id &lt; 10)</span>
+            <span style={style.namespace}>db<span style={style.dot}>.</span>customers<span style={style.dot}>.</span></span><span style={style.function}>filter</span>
+              <span style={style.brackets}>(</span><span style={style.parameters}>cust</span> <span style={style.operator}=></span> <span style={style.parameters}>cust</span>
         </p>
         <p>
           <span style={style.comment}>
             //invoke an HTTP service
           </span><br />
           <span style={style.namespace}>cartService.</span><span style={style.function}>addToCart</span><span style={style.parameters}>(item)</span>
+        </p>
+        <p>
+          <span style={style.comment}>
+            //Write to a file
+          </span><br />
+          <span style={style.namespace}>fs</span><span style={style.brackets}>[</span><span style={style.string}>"greet.txt"</span><span style={style.brackets}>]</span><span style={style.operator}>=</span><span style={style.string}>"hello, world"</span>
+        </p>
+        <p>
+          <span style={style.comment}>
+            //Read from a file
+          </span><br />
+          <span style={style.namespace}>fs.</span><span style={style.function}>get</span><span style={style.parameters}>("greet.txt")</span>
         </p>
         <p>
           <span style={style.comment}>

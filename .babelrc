@@ -1,5 +1,16 @@
 {
   "sourceMaps": true,
   "presets": ["node6", "stage-3"],
-  "plugins": ["transform-class-properties", "transform-async-to-generator", "transform-react-jsx"]
+  "plugins": ["transform-class-properties", "transform-async-to-generator", "transform-react-jsx"],
+  "plugins": [
+    ["isotropy-mongodb", {
+      "root": "db"
+    }],
+    ["isotropy-fs", {
+      "root": "fs"
+    }],
+    ["isotropy-proxy", {
+      "root": "services"
+    }],
+  ]
 }
