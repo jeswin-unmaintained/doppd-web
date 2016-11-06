@@ -1,5 +1,5 @@
 {
-  "author": "NodeJam<jeswinpk@agilehead.com>",
+  "author": "Jeswin<jeswinpk@agilehead.com>",
   "private": true,
   "scripts": {
     "start": "./build.sh && node dist/app.js"
