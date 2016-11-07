@@ -1,12 +1,13 @@
 Isotropy
 ===
 
-Isotropy is a set of babel compiler plugins that enable developers to build applications that can run entirely inside the browser during development, and deployed on Node.JS for production. Isotropy achieves this by translating native JS constructs to equivalent backend tasks.
+Isotropy is a framework that enables developers to write backend functionality (such as database querying) using native, built-in JavaScript constructs.
 
 For example, see how the following function compiles into a database insert:
-Note that the function addCustomer() needs to be async, so that it can run asynchronously on the server.
 ```
 db.customers = [];
+
+//Note that the function needs to be async.
 async function addCustomer(customer) {
   db.customers = db.customers.concat(customer);
 }
@@ -18,9 +19,9 @@ async function addCustomer(customer) {
 }
 ```
 
-Since we're using basic JS syntax to achieve backend objectives, your entire app will run inside the browser without needing any modification. And for production, Isotropy will recompile your code to run the UI in the browser, and the backend on Node.JS. So unlike typical isomorphic apps, isomorphic properties are not limited to  User Interfaces alone. Even the backend code will run in the browser. For lack of a better word, we'll call such end-to-end isomorphic applications "Isotropic applications".
+Since we're using basic JS features to achieve backend objectives, your entire app can run inside the browser. That enables a new breed of applications, those that can be developed and debugged entirely inside the browser. Once it is ready for production, Isotropy will recompile your code to run the UI in the browser, and the backend on Node.JS.
 
-This document discusses the specification and architecture of the Isotropy framework and tools. The following examples will discuss a typical Single-Page App (SPA) talking to HTTP services. However, you can use Isotropy for building backends alone, or frontends alone.
+Unlike typical isomorphic apps, isomorphic properties are not limited to  User Interfaces alone. Even the backend code will run in the browser. This document discusses the specification and architecture of the Isotropy framework and tools. The following examples will discuss a typical Single-Page App (SPA) talking to HTTP services. However, you can use Isotropy for building backends alone, or frontends alone.
 
 Your first app
 ---
@@ -31,38 +32,52 @@ First, install isotropy.
 npm install -g isotropy
 ```
 
-Create a new app, let's call it todo-service.
-This uses the default template
+Let's clone an example app from GitHub to get started.
 ```
-isotropy new todo-service
-```
-
-CD into the newly created directory
-```
-cd todo-service
+git clone https://www.github.com/isotropy/simple-todos
 ```
 
-Open up app.js and paste the following code
+Switch to the newly created directory
+```
+cd simple-todos
+```
+
+The meat of the application is in the file called services.js.
+You should see this:
 ```
 const db = [];
-const db.todos = [];
 
-async function addTodo(title, assignee) {  
-  db.todos = db.todos.concat({ title, assignee });
+//Some defaults.
+db.todos = [
+  { desc: "Get Milk", assignee: "me" },
+  { desc: "Buy Eggs", assignee: "me" }
+];
+
+export async function getTodos() {
+  return db.todos;
 }
 
-async function getTodos(assignee) {
-  return db.todos.filter(todo => todo.assignee === assignee);
+export async function getMyTodos() {
+  return db.todos.filter(t => t.assignee === "me");
 }
 
-async removeTodo(title, assignee) {
-  db.todos = db.todos.filter(todo => todo.assignee !== assignee || todo.title !== title);
+export async function addTodo(desc, assignee) {
+  db.todos = db.todos.concat({ desc, assignee });
+}
+
+export async function updateTodo(desc, assignee, newDesc) {
+  const todo = db.todos.find(todo => todo.desc === desc && todo.assignee === assignee);
+  todo.desc = newDesc;
+}
+
+export async function deleteTodo(deleted) {
+  db.todos = db.todos.filter(todo => todo.desc !== deleted.desc || todo.assignee !== deleted.assignee)
 }
 ```
 
 Run the app now
 ```
-isotropy run browser
+isotropy run dev
 ```
 And go to http://localhost:8080
 
@@ -71,19 +86,14 @@ The simple code that you wrote is running entirely inside the browser, operating
 There is no persistence mechanism yet, and all changes are lost if you refresh the page.
 
 Let's make it a little more interesting by persisting the data.
-Install a mongodb instance. If your mongodb port is not the default, configure it in package.json
+Install a mongodb instance. If your mongodb port is not the default, edit the connection parameters in package.json.
 ```
 --todo-- config goes here...
 ```
 
 Now make a server build with
 ```
-isotropy
-```
-
-Run the app again
-```
-npm start
+isotropy run production
 ```
 And go to http://localhost:8080
 
@@ -93,14 +103,9 @@ There is a new database in Mongodb called todo-service-db and a collection in it
 Let's look at what Isotropy has done here:
 1. Rewrite array operations to database inserts so that they run on the server
 2. Make the methods in services.js callable via HTTP
-3. Rewrite calls to from your UI JavaScript code into HTTP requests.
+3. Convert calls to services.js from your UI code into HTTP requests.
 
-Now that you know how it works, let's dive into some details.
-
-
-Two Environments
----
-As you may have noticed with the todo-service app, there are two different environments to which an Isotropic App needs to exist. One in which your entire app was loaded into a web page, and another in which you compiled the app with isotropy compile.
+Now that you know how it works, let's dive into the details.
 
 
 Database
@@ -135,6 +140,18 @@ Perform a database delete
 db.todos = db.todos.filter(todo => todo.assignee !== "you");
 ```
 
+Configuration in package.json
+```
+{
+  isotropy: {
+    mongodb: {
+      host: "localhost",
+      port: 19027,
+      password: "abcsfdef"
+    }
+  }
+}
+```
 
 File System
 ---
@@ -165,6 +182,17 @@ Create a sub-directory
 fs.dir1.dir2 = {}
 ```
 
+Configuration in package.json
+```
+{
+  isotropy: {
+    fs: {
+      directory: "data"
+    }
+  }
+}
+```
+
 
 HTTP Services
 ---
@@ -184,7 +212,18 @@ const sum = await services.addTwoNumbers(x, y);
 const sum = await fetch("http://example.com/addTwoNumbers(x, y)?x=10y=20");
 ```
 
-Notice the interesting HTTP url. That is the Isotropy RPC calling convention. Read on.
+Configuration in package.json
+```
+{
+  isotropy: {
+    http: {
+      convention: "isotropy"
+    }
+  }
+}
+```
+
+Notice the interesting HTTP url convention. That is the Isotropy RPC calling convention. Read on.
 
 
 Isotropy HTTP services calling convention
@@ -197,17 +236,31 @@ Invoke a method
 curl http://www.example.com/addTwoNumbers(10,20)
 ```
 
-Invoke with variables
+Invoke with parameters
 ```
 curl http://www.example.com/addTwoNumbers(x, y)?x=10&y=20
 ```
 
 Pass full objects as well
 ```
-curl http://www.example.com/addTodo({desc:"bring milk", assignee: "me"})
+curl http://www.example.com/addTodo({ desc:"bring milk", assignee: "me" })
 ```
 
-Methods are accessible via GET or POST and you can use most common Content-Types such as application/x-www-form-urlencoded, multipart/form-data or application/json.
+Pass full objects via a parameter
+```
+curl http://www.example.com/addTodo(todo)?todo={ desc:"bring milk", assignee: "me" })
+```
+
+Methods are callable via GET or POST and you can use most common Content-Types such as application/x-www-form-urlencoded, multipart/form-data or application/json.
+
+Example of invoking a method via HTTP POST
+```
+curl --data "x=10&y=20" http://www.example.com/addTwoNumbers(x, y)
+```
+
+It is not mandatory that you use the Isotropy RPC Calling Convention, but that is the default.
+Other mechanisms will be added in future.
+
 
 Cookies
 ---

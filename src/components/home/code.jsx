@@ -64,7 +64,7 @@ export default class Code extends React.Component {
             //here's a database query
           </span><br />
             <span style={style.namespace}>db<span style={style.dot}>.</span>customers<span style={style.dot}>.</span></span><span style={style.function}>filter</span>
-              <span style={style.brackets}>(</span><span style={style.parameters}>cust</span> <span style={style.operator}=></span> <span style={style.parameters}>cust</span>
+              <span style={style.brackets}>(</span><span style={style.parameters}>cust</span> <span style={style.operator}></span> <span style={style.parameters}>cust</span>
         </p>
         <p>
           <span style={style.comment}>
