@@ -65,12 +65,13 @@ export async function addTodo(desc, assignee) {
 }
 
 export async function updateTodo(desc, assignee, newDesc) {
-  const todo = db.todos.find(todo => todo.desc === desc && todo.assignee === assignee);
-  todo.desc = newDesc;
+  const matchingItem = db.todos.find(todo => todo.desc === desc && todo.assignee === assignee);
+  db.todos = db.todos.map(todo => todo === matchingItem ? { desc: newDesc, assignee } : todo);
 }
 
 export async function deleteTodo(deleted) {
-  db.todos = db.todos.filter(todo => todo.desc !== deleted.desc || todo.assignee !== deleted.assignee)
+  const matchingItem = db.todos.find(todo => todo.desc === deleted.desc && todo.assignee === deleted.assignee);
+  db.todos = db.todos.filter(todo => todo !== matchingItem);
 }
 ```
 
@@ -157,7 +158,7 @@ Configuration in package.json
 
 File System
 ---
-The default isotropy configuration uses the "fs." prefix to identify arrays that need to be persisted to the database. By default, a directory called "data" under the current directory is used as the store. Both the prefix and directory location can be configured in package.json (see configuration). More storage options like S3 will be added in future.
+The default isotropy configuration uses the "fs." prefix to identify arrays that need to be persisted to the database. By default, a directory called "data" under the current directory is used as the store. Both the prefix and directory location can be configured in package.json (see configuration). More storage options like Amazon S3 will be added in future.
 
 Create a directory
 ```javascript
@@ -198,7 +199,7 @@ Configuration in package.json
 
 HTTP Services
 ---
-By default, Isotropy compiler for production converts all the methods imported from the services.js file into remote HTTP calls. You can change the default filename (services.js) in package.json (see configuration).
+By default, Isotropy compiler for production converts all the methods imported from the backend entry-point file (defaults to services.js) remote HTTP calls. You can change the entry-point filename in package.json (see configuration).
 
 ```javascript
 const sum = await services.addTwoNumbers(10, 20);
