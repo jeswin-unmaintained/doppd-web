@@ -64,9 +64,9 @@ export async function addTodo(desc, assignee) {
   db.todos = db.todos.concat({ desc, assignee });
 }
 
-export async function updateTodo(desc, assignee, newDesc) {
+export async function updateTodo(desc, assignee, newDesc, newAssignee) {
   const matchingItem = db.todos.find(todo => todo.desc === desc && todo.assignee === assignee);
-  db.todos = db.todos.map(todo => todo === matchingItem ? { desc: newDesc, assignee } : todo);
+  db.todos = db.todos.map(todo => todo === matchingItem ? { desc: newDesc, assignee: newAssignee } : todo);
 }
 
 export async function deleteTodo(deleted) {
