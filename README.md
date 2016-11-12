@@ -48,8 +48,8 @@ const db = [];
 
 //Some defaults.
 db.todos = [
-  { desc: "Get Milk", assignee: "me" },
-  { desc: "Buy Eggs", assignee: "me" }
+  { title: "get milk", assignee: "you", priority: 1 },
+  { title: "buy eggs", assignee: "you", priority: 2 }
 ];
 
 export async function getTodos() {
@@ -57,20 +57,20 @@ export async function getTodos() {
 }
 
 export async function getMyTodos() {
-  return db.todos.filter(t => t.assignee === "me");
+  return db.todos.filter( t.assignee === "me");
 }
 
-export async function addTodo(desc, assignee) {
-  db.todos = db.todos.concat({ desc, assignee });
+export async function addTodo(title, assignee) {
+  db.todos = db.todos.concat({ title, assignee });
 }
 
-export async function updateTodo(desc, assignee, newDesc, newAssignee) {
-  const matchingItem = db.todos.find(todo => todo.desc === desc && todo.assignee === assignee);
-  db.todos = db.todos.map(todo => todo === matchingItem ? { desc: newDesc, assignee: newAssignee } : todo);
+export async function updateTodo(title, assignee, newTitle, newAssignee) {
+  const matchingItem = db.todos.find(todo => todo.title === title && todo.assignee === assignee);
+  db.todos = db.todos.map(todo => todo === matchingItem ? { title: newTitle, assignee: newAssignee, ...todo } : todo);
 }
 
 export async function deleteTodo(deleted) {
-  const matchingItem = db.todos.find(todo => todo.desc === deleted.desc && todo.assignee === deleted.assignee);
+  const matchingItem = db.todos.find(todo => todo.title === deleted.title && todo.assignee === deleted.assignee);
   db.todos = db.todos.filter(todo => todo !== matchingItem);
 }
 ```
@@ -110,37 +110,81 @@ Now that you know how it works, let's dive into the details.
 
 Database
 ---
-The default isotropy configuration uses the "db." prefix to identify arrays that need to be persisted to the database. This prefix can be configured in package.json (see configuration). By default, Isotropy uses MongoDb as the backend. PostgreSQL backend is coming soon.
+The default isotropy configuration uses the "db." prefix to identify arrays that need to be persisted to the database. This prefix can be configured in package.json (see configuration). Presently, Isotropy uses MongoDb as the backend. PostgreSQL backend is coming soon.
 
 Perform a database insert
 ```javascript
 //Insert a single item
-db.todos = db.todos.concat({ title, assignee });
+async function addTodo(title, assignee) {
+  db.todos = db.todos.concat({ title, assignee });
+}
 
 //Insert a list of new items
-const todosList = [
-  { title: "get milk", assignee: "you" },
-  { title: "buy eggs", assignee: "you" }
-];
-db.todos = db.todos.concat(todosList)
+async function addManyTodos(title, assignee) {
+  const todosList = [
+    { title: "get milk", assignee: "you", priority: 1 },
+    { title: "buy eggs", assignee: "you", priority: 2 }
+  ];
+  db.todos = db.todos.concat(todosList)
+}
 ```
 
-Perform a database query
+Query a table
 ```javascript
-return db.todos.filter(todo => todo.assignee === assignee);
+async function getTodos(who) {
+  return db.todos.filter(todo => todo.assignee === who);
+}
 ```
 
-Perform a database update
+Query and return specific fields
 ```javascript
-const item = db.todos.find(t => t.assignee === "you");
-item.assignee = "me";
+async function getTodos(who) {
+  return db.todos
+    .filter(todo => todo.assignee === who)
+    .map(todo => ({ assignee: todo.assignee }));
+}
 ```
 
-Perform a database delete
+Limit the number of results
 ```javascript
-//By reassigning the array with only items that match your criteria
-//The following statement removed todos which are assigned to you.
-db.todos = db.todos.filter(todo => todo.assignee !== "you");
+//Returns rows 10-20
+async function getTodos(who) {
+  return db.todos
+    .filter(todo => todo.assignee === who)
+    .slice(10, 20);
+}
+```
+
+Order by a specific field
+```javascript
+async function getTodos(who) {
+  return db.todos
+    .filter(todo => todo.assignee === who)
+    .sort((x, y) => x.assignee > y.assignee);
+}
+```
+
+Update a record
+```javascript
+async function updateTodo(assignee, newAssignee) {
+  const matchingItem = db.todos.find(todo => todo.assignee === assignee);
+  db.todos = db.todos.map(todo => todo === matchingItem ? { assignee: newAssignee, ...todo } : todo);
+}
+```
+
+Delete a record
+```javascript
+async function deleteTodo(title, assignee) {
+  const matchingItem = db.todos.find(todo => todo.assignee == assignee && todo.title === title);
+  db.todos = db.todos.filter(todo => todo !== matchingItem);
+}
+```
+
+Count the number of items
+```javascript
+async function countTodos(who) {
+  return db.todos.filter(todo => todo.assignee === who).length;
+}
 ```
 
 Configuration in package.json
@@ -150,7 +194,8 @@ Configuration in package.json
     "mongodb": {
       "host": "localhost",
       "port": 19027,
-      "password": "abcsfdef"
+      "password": "abcsfdef",
+      "database": "todos-db"
     }
   }
 }
@@ -158,7 +203,7 @@ Configuration in package.json
 
 File System
 ---
-The default isotropy configuration uses the "fs." prefix to identify arrays that need to be persisted to the database. By default, a directory called "data" under the current directory is used as the store. Both the prefix and directory location can be configured in package.json (see configuration). More storage options like Amazon S3 will be added in future.
+The default configuration uses a "fs." prefix to identify arrays that need to be persisted to the database. By default, a directory called "data" under the current directory is used as the store. Both the prefix and directory location can be configured in package.json (see configuration). More storage options like Amazon S3 will be added in future.
 
 Create a directory
 ```javascript
@@ -215,7 +260,7 @@ Configuration in package.json
 ```json
 {
   "isotropy": {
-    "http": {
+    "rpc": {
       "convention": "isotropy"
     }
   }
@@ -242,12 +287,12 @@ curl http://www.example.com/addTwoNumbers(x, y)?x=10&y=20
 
 Pass full objects as well
 ```bash
-curl http://www.example.com/addTodo({ desc:"bring milk", assignee: "me" })
+curl http://www.example.com/addTodo({ title:"bring milk", assignee: "me" })
 ```
 
 Pass full objects via a parameter
 ```bash
-curl http://www.example.com/addTodo(todo)?todo={ desc:"bring milk", assignee: "me" })
+curl http://www.example.com/addTodo(todo)?todo={ title:"bring milk", assignee: "me" })
 ```
 
 Methods are callable via GET or POST and you can use most common Content-Types such as application/x-www-form-urlencoded, multipart/form-data or application/json.
