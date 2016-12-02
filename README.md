@@ -57,7 +57,7 @@ export async function getTodos() {
 }
 
 export async function getMyTodos() {
-  return db.todos.filter( t.assignee === "me");
+  return db.todos.filter(t => t.assignee === "me");
 }
 
 export async function addTodo(title, assignee) {
@@ -65,13 +65,14 @@ export async function addTodo(title, assignee) {
 }
 
 export async function updateTodo(title, assignee, newTitle, newAssignee) {
-  const matchingItem = db.todos.find(todo => todo.title === title && todo.assignee === assignee);
-  db.todos = db.todos.map(todo => todo === matchingItem ? { title: newTitle, assignee: newAssignee, ...todo } : todo);
+  const matchingItem = db.todos.find(todo => );
+  db.todos = db.todos.map(todo => todo.title === title && todo.assignee === assignee ?
+    { title: newTitle, assignee: newAssignee, ...todo } : todo
+  );
 }
 
 export async function deleteTodo(deleted) {
-  const matchingItem = db.todos.find(todo => todo.title === deleted.title && todo.assignee === deleted.assignee);
-  db.todos = db.todos.filter(todo => todo !== matchingItem);
+  db.todos = db.todos.filter(todo => !(todo.title === deleted.title && todo.assignee === deleted.assignee));
 }
 ```
 
@@ -129,6 +130,13 @@ async function addManyTodos(title, assignee) {
 }
 ```
 
+Get all records
+```javascript
+async function getAllTodos(who) {
+  return db.todos;
+}
+```
+
 Query a table
 ```javascript
 async function getTodos(who) {
@@ -167,16 +175,14 @@ async function getTodos(who) {
 Update a record
 ```javascript
 async function updateTodo(assignee, newAssignee) {
-  const matchingItem = db.todos.find(todo => todo.assignee === assignee);
-  db.todos = db.todos.map(todo => todo === matchingItem ? { assignee: newAssignee, ...todo } : todo);
+  db.todos = db.todos.map(todo => todo.assignee === assignee ? { assignee: newAssignee, ...todo } : todo);
 }
 ```
 
 Delete a record
 ```javascript
 async function deleteTodo(title, assignee) {
-  const matchingItem = db.todos.find(todo => todo.assignee == assignee && todo.title === title);
-  db.todos = db.todos.filter(todo => todo !== matchingItem);
+  db.todos = db.todos.filter(todo => !(todo.assignee == assignee && todo.title === title));
 }
 ```
 
